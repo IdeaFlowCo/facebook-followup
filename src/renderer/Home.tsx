@@ -1,6 +1,7 @@
 import React, { Component } from "react"; // import { Link } from "react-router-dom";
 import { ipcRenderer } from "electron";
 let styles = require("./Home.css");
+
 type Props = {};
 
 type participant = {
