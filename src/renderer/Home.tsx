@@ -1,5 +1,6 @@
 import React, { Component } from "react"; // import { Link } from "react-router-dom";
 import { ipcRenderer } from "electron";
+
 let styles = require("./Home.css");
 
 type Props = {};
@@ -34,6 +35,7 @@ export default class Home extends Component<Props, {}> {
     threadList: thread[];
     currentHistory: history[];
     selectedThreadID: string;
+    loginApproval?: string;
   } = {
     friendsList: [],
     threadList: [],
@@ -47,6 +49,9 @@ export default class Home extends Component<Props, {}> {
   constructor(props: {}) {
     super(props);
     ipcRenderer.on("message", this.newMessage);
+    ipcRenderer.on("login-approval", event => {
+      this.setState({ loginApproval: "" });
+    });
     ipcRenderer.on("getFriendsListResponse", this.getFriendsListResponse);
     ipcRenderer.on("getThreadListResponse", this.getThreadListResponse);
     ipcRenderer.on("getThreadHistoryResponse", this.getThreadHistoryResponse);
@@ -70,7 +75,7 @@ export default class Home extends Component<Props, {}> {
   };
 
   getThreadListResponse = (event: Electron.Event, threadList: thread[]) => {
-    console.log(threadList[0]);
+    console.log(threadList);
     this.setState({
       threadList: threadList.map(thread => {
         return { ...thread, snoozed: false };
@@ -125,7 +130,10 @@ export default class Home extends Component<Props, {}> {
 
       let currentHistory = this.state.currentHistory.map((message, i) => {
         if (closestSoFarIndex === i) {
-          return { ...message, messageID: data.messageID };
+          return {
+            ...message,
+            messageID: data.messageID
+          };
         }
 
         return message;
@@ -192,9 +200,29 @@ export default class Home extends Component<Props, {}> {
   componentDidUpdate() {
     this.scrollToBottom();
   }
+  sendApproval(): void {
+    ipcRenderer.send("loginApprovalResponse", this.state.loginApproval);
+
+    // throw new Error("Method not implemented.");
+  }
 
   render() {
-    return (
+    const { loginApproval } = this.state;
+
+    const ApprovalInput = (
+      <>
+        <input
+          type="text"
+          name="approvalInput"
+          id="approval"
+          onKeyPress={({ key }) => key === "enter" && this.sendApproval()}
+        />
+      </>
+    );
+
+    return loginApproval ? (
+      ApprovalInput
+    ) : (
       <div className={styles.container} data-tid="container">
         <div className={styles.left_column}>
           <div className={styles.controls} />
@@ -221,6 +249,7 @@ export default class Home extends Component<Props, {}> {
             </div>
           }
         </div>
+
         <div className={styles.right_column}>
           {this.state.selectedThreadID && (
             <div className={styles.right_column_controls}>

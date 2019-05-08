@@ -60,5 +60,5 @@ app.on("activate", () => {
 // create main BrowserWindow when electron is ready
 app.on("ready", () => {
   mainWindow = createMainWindow();
-  initFBChat();
+  initFBChat(mainWindow);
 });

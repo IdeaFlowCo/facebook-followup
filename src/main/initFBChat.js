@@ -12,10 +12,17 @@ const getCreds = () => {
   }
 };
 
-const initFBChat = () => {
+const initFBChat = window => {
   return fbchat(getCreds(), (err, api) => {
     if (err) {
-      console.error(err);
+      switch (err.error) {
+        case "login-approval":
+          console.log("Enter code > ");
+          window.webContents.send("loginApproval");
+          break;
+        default:
+          console.error(err);
+      }
       return;
     }
     // dasApi = api;
