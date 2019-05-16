@@ -1,6 +1,6 @@
 import React, { Component } from "react"; // import { Link } from "react-router-dom";
 import { ipcRenderer } from "electron";
-
+import _ from "lodash";
 let styles = require("./Home.css");
 
 type Props = {};
@@ -32,13 +32,13 @@ export default class Home extends Component<Props, {}> {
   // props: Props;
   state: {
     friendsList: friend[];
-    threadList: thread[];
+    threadDict: { [x: string]: thread };
     currentHistory: history[];
     selectedThreadID: string;
     loginApproval?: string;
   } = {
     friendsList: [],
-    threadList: [],
+    threadDict: {},
     currentHistory: [],
     selectedThreadID: ""
   };
@@ -49,16 +49,13 @@ export default class Home extends Component<Props, {}> {
   constructor(props: {}) {
     super(props);
     ipcRenderer.on("message", this.newMessage);
-    ipcRenderer.on("login-approval", event => {
+    ipcRenderer.on("login-approval", () => {
       this.setState({ loginApproval: "" });
     });
-    ipcRenderer.on("getFriendsListResponse", this.getFriendsListResponse);
+    ipcRenderer.on("RCV_GET_CONTACTS", this.getFriendsListResponse);
     ipcRenderer.on("getThreadListResponse", this.getThreadListResponse);
     ipcRenderer.on("getThreadHistoryResponse", this.getThreadHistoryResponse);
     ipcRenderer.on("sendMessageResponse", this.sendMessageResponse);
-
-    ipcRenderer.send("getThreadList");
-    ipcRenderer.send("listen");
   }
 
   newMessage = (event: Electron.Event, message: history) => {
@@ -75,7 +72,7 @@ export default class Home extends Component<Props, {}> {
   };
 
   getThreadListResponse = (event: Electron.Event, threadList: thread[]) => {
-    console.log(threadList);
+    console.log(threadList, event);
     this.setState({
       threadList: threadList.map(thread => {
         return { ...thread, snoozed: false };
@@ -105,7 +102,7 @@ export default class Home extends Component<Props, {}> {
 
     this.setState({
       selectedThreadID: threadID,
-      threadList: this.state.threadList.map(thread =>
+      threadList: _.mapValues(this.state.threadDict, thread =>
         thread.threadID === threadID ? { ...thread, unreadCount: 0 } : thread
       )
     });
@@ -166,17 +163,17 @@ export default class Home extends Component<Props, {}> {
   };
 
   makeAsUnread = () => {
+    const { selectedThreadID, threadDict } = this.state;
     ipcRenderer.send("markAsRead", {
       threadID: this.state.selectedThreadID,
       read: false
     });
 
     this.setState({
-      threadList: this.state.threadList.map(thread =>
-        thread.threadID === this.state.selectedThreadID
-          ? { ...thread, unreadCount: 1 }
-          : thread
-      )
+      threadDict: {
+        ...threadDict,
+        [selectedThreadID]: { ...threadDict[selectedThreadID], unreadCount: 1 }
+      }
     });
   };
 
@@ -195,6 +192,11 @@ export default class Home extends Component<Props, {}> {
 
   componentDidMount() {
     this.scrollToBottom();
+    console.log("mountied");
+
+    ipcRenderer.send("GET_CONTACTS");
+    console.log("GET_CONTACTS");
+    ipcRenderer.send("listen");
   }
 
   componentDidUpdate() {
@@ -207,10 +209,16 @@ export default class Home extends Component<Props, {}> {
   }
 
   render() {
-    const { loginApproval } = this.state;
-
+    const {
+      loginApproval,
+      selectedThreadID,
+      threadDict,
+      currentHistory
+    } = this.state;
+    const selectedThread = threadDict[selectedThreadID];
     const ApprovalInput = (
       <>
+        <label htmlFor="approval">Enter Login Approval Code:</label>
         <input
           type="text"
           name="approvalInput"
@@ -220,87 +228,90 @@ export default class Home extends Component<Props, {}> {
       </>
     );
 
+    const ThreadList = ({ list }: { list: thread[] }) => (
+      <div className={styles.thread_list}>
+        {list.map(({ threadID, name, participants, unreadCount }) => (
+          <div
+            key={threadID}
+            onClick={() => this.openThread(threadID)}
+            className={[
+              styles.thread_item,
+              threadID === this.state.selectedThreadID
+                ? styles.thread_item_selected
+                : "",
+              unreadCount > 0 ? styles.thread_item_unread : ""
+            ].join(" ")}
+          >
+            {name || participants.map(p => p.name).join(", ")}
+          </div>
+        ))}
+      </div>
+    );
+
+    const SelectedThread = ({ selectedThread }: { selectedThread: thread }) =>
+      selectedThread ? (
+        <div className={styles.right_column_controls}>
+          <div onClick={this.makeAsUnread} style={{ cursor: "pointer" }}>
+            Mark as unread
+          </div>
+          {selectedThread.name}
+          <div onClick={this.snooze} style={{ cursor: "pointer" }}>
+            Snooze
+          </div>
+        </div>
+      ) : null;
+
+    const ChatWindow = ({ currentHistory }: { currentHistory: history[] }) => (
+      <div
+        className={styles.chat_window}
+        ref={el => {
+          this.scrollview = el;
+        }}
+      >
+        {currentHistory.map(({ body, type, senderID, messageID }, i) =>
+          type === "message" ? (
+            <div
+              key={messageID === "tmp" ? messageID + i : messageID}
+              className={[
+                styles.chat_bubble,
+                senderID == yourID ? styles.yours : styles.theirs
+              ].join(" ")}
+            >
+              <span>{body}</span>
+            </div>
+          ) : (
+            "event"
+          )
+        )}
+      </div>
+    );
+
+    const ChatControls = () => (
+      <div className={styles.chat_controls}>
+        <input
+          className={styles.chat_input}
+          ref={el => {
+            this.chatInput = el;
+          }}
+          onKeyPress={e => (e.key === "Enter" ? this.sendMessage() : null)}
+        />
+        <button className={styles.chat_send} onClick={this.sendMessage}>
+          send
+        </button>
+      </div>
+    );
+
     return loginApproval ? (
       ApprovalInput
     ) : (
       <div className={styles.container} data-tid="container">
         <div className={styles.left_column}>
-          <div className={styles.controls} />
-          <div className={styles.thread_list} />
-          {
-            <div className={styles.thread_list}>
-              {this.state.threadList.map(
-                ({ threadID, name, participants, unreadCount }) => (
-                  <div
-                    key={threadID}
-                    onClick={() => this.openThread(threadID)}
-                    className={[
-                      styles.thread_item,
-                      threadID === this.state.selectedThreadID
-                        ? styles.thread_item_selected
-                        : "",
-                      unreadCount > 0 ? styles.thread_item_unread : ""
-                    ].join(" ")}
-                  >
-                    {name || participants.map(p => p.name).join(", ")}
-                  </div>
-                )
-              )}
-            </div>
-          }
+          <ThreadList list={Object.values(this.state.threadDict)} />
         </div>
-
         <div className={styles.right_column}>
-          {this.state.selectedThreadID && (
-            <div className={styles.right_column_controls}>
-              <div onClick={this.makeAsUnread} style={{ cursor: "pointer" }}>
-                Make as unread
-              </div>
-              {
-                this.state.threadList.filter(
-                  ({ threadID }) => threadID === this.state.selectedThreadID
-                )[0].name
-              }
-              <div onClick={this.snooze} style={{ cursor: "pointer" }}>
-                Snooze
-              </div>
-            </div>
-          )}
-          <div
-            className={styles.chat_window}
-            ref={el => {
-              this.scrollview = el;
-            }}
-          >
-            {this.state.currentHistory.map(
-              ({ body, type, senderID, messageID }, i) =>
-                type === "message" ? (
-                  <div
-                    key={messageID === "tmp" ? messageID + i : messageID}
-                    className={[
-                      styles.chat_bubble,
-                      senderID == yourID ? styles.yours : styles.theirs
-                    ].join(" ")}
-                  >
-                    <span>{body}</span>
-                  </div>
-                ) : (
-                  "event"
-                )
-            )}
-          </div>
-          <div className={styles.chat_controls}>
-            <input
-              className={styles.chat_input}
-              ref={el => {
-                this.chatInput = el;
-              }}
-              onKeyPress={e => (e.key === "Enter" ? this.sendMessage() : null)}
-            />
-            <button className={styles.chat_send} onClick={this.sendMessage}>
-              send
-            </button>
-          </div>
+          <SelectedThread selectedThread={selectedThread} />
+          <ChatWindow currentHistory={currentHistory} />
+          <ChatControls />
         </div>
       </div>
     );
