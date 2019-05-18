@@ -1,29 +1,54 @@
-const { ipcMain } = require("electron");
-const fbchat = require("facebook-chat-api");
-const fs = require("fs");
-const { Messen } = require("messen");
-const util = require("util");
+import { ipcMain, BrowserWindow } from "electron";
+import fbchat from "facebook-chat-api";
+import fs from "fs";
+import { Messen } from "messen";
+import util from "util";
+import {
+  resourceToRequest,
+  ResourceToCommandMapper,
+  apiHandler
+} from "../common/resources";
 
 const getCreds = () => {
   try {
-    const appState = JSON.parse(fs.readFileSync("appstate.json"));
+    const appState = JSON.parse(fs.readFileSync("appstate.json").toString());
     return { appState };
   } catch (err) {
-    const credentials = JSON.parse(fs.readFileSync("src/credentials.json"));
+    const credentials = JSON.parse(
+      fs.readFileSync("src/credentials.json").toString()
+    );
     return credentials;
   }
 };
-let mes;
+
+let mes: Messen;
 mes = new Messen({ dir: "credentials" });
 
-const createNewThreadForUser = (mes, username) => {
-  mes.store.users.getUser({ name: username }).then(user => {
-    if (!user) throw new Error();
-    return {
-      threadID: user.id,
-      name: user.name
-    };
-  });
+const genericHandling: apiHandler = {
+  get: (actionType: string, handler: ({}) => Promise<any>) => (
+    event: any,
+    payload: {}
+  ) => {
+    const [command, resource] = actionType.split("_");
+    handler(payload).then(val => event.sender.send("RCV_" + actionType, val));
+  },
+  post: () => undefined
+};
+
+const bindActionsToIPC = (resourceToRequest: ResourceToCommandMapper) => {
+  for (const k in resourceToRequest) {
+    const resource = resourceToRequest[k];
+    for (const command in resource) {
+      const actionType = [command, k].map(w => w.toUpperCase()).join("_");
+      const genericHandlerForCommand = genericHandling[command];
+      const resourceHandler = resource[command] || undefined;
+      if (genericHandlerForCommand && resourceHandler)
+        ipcMain.on(
+          actionType,
+          genericHandlerForCommand(actionType, resourceHandler)
+        );
+    }
+  }
 };
 
 /**
@@ -33,64 +58,10 @@ const createNewThreadForUser = (mes, username) => {
 
 // api interface  = ...args, cb
 
-const resourceToRequest = {
-  contacts: {
-    /**
-     * @param {(err, success)=>any} cb
-     */
-    get: payload => {
-      return new Promise((resolve, reject) =>
-        mes.store.users.me
-          ? resolve(mes.store.users.me.friends)
-          : reject(undefined)
-      );
-    }
-  },
-  history: {
-    get: ({ username, count }) => {
-      const thread = createNewThreadForUser(username);
-      return new Promise((resolve, reject) => {
-        mes.api.getThreadHistory(
-          thread.threadID,
-          count,
-          undefined,
-          (err, history) => {
-            if (err) return reject(err);
-            resolve(history);
-
-            // mes.store.users.getUsers();
-          }
-        );
-      });
-    }
-  }
-};
-
-const genericHandling = {
-  get: (actionType, handler) => (event, payload) => {
-    console.log(actionType, handler);
-
-    handler(payload).then(val => event.sender.send("RCV_" + actionType, val));
-  }
-};
-
-bindActionsToIPC = resourceToRequest => {
-  for (const k in resourceToRequest) {
-    const resource = resourceToRequest[k];
-    for (const command in resource) {
-      const actionType = [command, k].map(w => w.toUpperCase()).join("_");
-      ipcMain.on(
-        actionType,
-        genericHandling[command](actionType, resource[command])
-      );
-    }
-  }
-};
-
-const initFBChat = window => {
+export const initFBChat = (window: BrowserWindow) => {
   const creds = getCreds();
   mes.login(creds).then(ev => {
-    bindActionsToIPC(resourceToRequest);
+    bindActionsToIPC(resourceToRequest(mes));
 
     mes.listen();
   });
@@ -180,5 +151,3 @@ const initFBChat = window => {
 //   });
 // });
 // };
-
-module.exports = { initFBChat };

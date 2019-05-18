@@ -67,7 +67,7 @@ export default class Home extends Component<Props, {}> {
   };
 
   getFriendsListResponse = (event: Electron.Event, friendsList: friend[]) => {
-    console.log(event, friendsList);
+    console.log({ contacts: friendsList });
     this.setState({ friendsList });
   };
 
@@ -141,13 +141,14 @@ export default class Home extends Component<Props, {}> {
   };
 
   sendMessage = () => {
-    const threadID = this.state.selectedThreadID;
+    const { selectedThreadID: threadID, currentHistory } = this.state;
     ipcRenderer.send("sendMessage", {
       threadID,
       body: this.chatInput && this.chatInput.value
     });
     this.setState({
-      currentHistory: this.state.currentHistory.concat([
+      currentHistory: [
+        ...currentHistory,
         {
           threadID,
           messageID: "tmp",
@@ -156,7 +157,7 @@ export default class Home extends Component<Props, {}> {
           senderID: yourID,
           timestamp: Date.now()
         }
-      ])
+      ]
     });
 
     if (this.chatInput) this.chatInput.value = "";
@@ -192,10 +193,7 @@ export default class Home extends Component<Props, {}> {
 
   componentDidMount() {
     this.scrollToBottom();
-    console.log("mountied");
-
     ipcRenderer.send("GET_CONTACTS");
-    console.log("GET_CONTACTS");
     ipcRenderer.send("listen");
   }
 

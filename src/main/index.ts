@@ -7,7 +7,7 @@ import { initFBChat } from "./initFBChat";
 const isDevelopment = process.env.NODE_ENV !== "production";
 
 // global reference to mainWindow (necessary to prevent window from being garbage collected)
-let mainWindow;
+let mainWindow: BrowserWindow | null;
 
 function createMainWindow() {
   const window = new BrowserWindow();
