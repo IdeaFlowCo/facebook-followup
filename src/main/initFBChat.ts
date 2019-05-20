@@ -1,12 +1,14 @@
 import { ipcMain, BrowserWindow } from "electron";
-import fbchat from "facebook-chat-api";
+// import fbchat from "facebook-chat-api";
 import fs from "fs";
 import { Messen } from "messen";
-import util from "util";
+// import util from "util";
 import {
   resourceToRequest,
-  ResourceToCommandMapper,
-  apiHandler
+  apiHandler,
+  actionate,
+  command,
+  FBResource
 } from "../common/resources";
 
 const getCreds = () => {
@@ -29,26 +31,42 @@ const genericHandling: apiHandler = {
     event: any,
     payload: {}
   ) => {
-    const [command, resource] = actionType.split("_");
-    handler(payload).then(val => event.sender.send("RCV_" + actionType, val));
+    // const [command, resource] = actionType.split("_");
+    handler(payload).then(val => {
+      console.log("finally it works");
+
+      event.sender.send("RCV_" + actionType, val);
+    });
   },
   post: () => undefined
 };
 
-const bindActionsToIPC = (resourceToRequest: ResourceToCommandMapper) => {
-  for (const k in resourceToRequest) {
-    const resource = resourceToRequest[k];
-    for (const command in resource) {
-      const actionType = [command, k].map(w => w.toUpperCase()).join("_");
-      const genericHandlerForCommand = genericHandling[command];
-      const resourceHandler = resource[command] || undefined;
-      if (genericHandlerForCommand && resourceHandler)
-        ipcMain.on(
-          actionType,
-          genericHandlerForCommand(actionType, resourceHandler)
-        );
-    }
-  }
+const bindActionsToIPC = (
+  resourceToRequest: { [key in keyof typeof FBResource]: apiHandler }
+) => {
+  Object.keys(genericHandling).forEach(commandName => {
+    Object.entries(resourceToRequest).forEach(([k, resource]) => {
+      const actionType = actionate({
+        command: commandName as command,
+        rec: false,
+        resource: k as FBResource
+      });
+      const handler = resource[commandName];
+      if (!handler) {
+        console.error(actionType + " not implemented");
+        return;
+      }
+
+      const genericHandlerForCommand = genericHandling[commandName];
+      if (commandName === "post" || !genericHandlerForCommand) {
+        console.error(actionType + " not implemented");
+        return;
+      }
+      console.log(actionType, handler);
+
+      ipcMain.on(actionType, genericHandlerForCommand(actionType, handler));
+    });
+  });
 };
 
 /**
