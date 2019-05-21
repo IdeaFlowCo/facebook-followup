@@ -103,7 +103,7 @@ export const resourceToRequest = (mes: Messen) => {
       get: () => {
         return new Promise((resolve, reject) => {
           mes.api.getThreadList(20, null, [], (err: any, data: thread[]) =>
-            err ? reject(err) : resolve(data)
+            err ? reject(err) : resolve(_.keyBy(data, "threadID"))
           );
         });
       }
@@ -135,10 +135,7 @@ export const useMessenStore = (ipcRenderer: IpcRenderer) => {
         command: "get",
         rec: true
       });
-
       ipcRenderer.on(resourceReceived, (e: Electron.Event, data: any) => {
-        console.log(resourceReceived, data);
-
         /** @todo handle the case where we need to update, not replace state */
         const [, setState] = states[resource];
         setState(data);

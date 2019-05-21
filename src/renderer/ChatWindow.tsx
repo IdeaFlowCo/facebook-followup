@@ -1,18 +1,12 @@
 import React from "react";
 import { message } from "../common/resources";
 
-const message = (yourID: string, styles: any) => (
+const message = (yourID: string) => (
   { body, type, senderID, messageID }: any,
   i: number
 ) =>
   type === "message" ? (
-    <div
-      key={messageID === "tmp" ? messageID + i : messageID}
-      className={[
-        styles.chat_bubble,
-        senderID == yourID ? styles.yours : styles.theirs
-      ].join(" ")}
-    >
+    <div key={messageID === "tmp" ? messageID + i : messageID}>
       <span>{body}</span>
     </div>
   ) : (
@@ -21,16 +15,11 @@ const message = (yourID: string, styles: any) => (
 
 export default ({
   currentHistory,
-  styles,
+
   reff,
   yourID
 }: {
   currentHistory: message[];
-  styles: any;
   reff: React.MutableRefObject<null>;
   yourID: string;
-}) => (
-  <div className={styles.chat_window} ref={reff}>
-    {currentHistory.map(message(yourID, styles))}
-  </div>
-);
+}) => <div ref={reff}>{currentHistory.map(message(yourID))}</div>;

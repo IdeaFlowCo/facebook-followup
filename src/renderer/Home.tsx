@@ -22,21 +22,7 @@ import {
 } from "./stateLogic";
 import ChatWindow from "./ChatWindow";
 import ChatControls from "./ChatControls";
-let styles = require("./Home.css");
-
 const yourID = "100009069356507";
-
-// state: {
-//     friendsList: friend[];
-//     threadDict: { [x: string]: thread };
-//     currentHistory: message[];
-//     selectedThreadID: string;
-//   } = {
-//     friendsList: [],
-//     threadDict: {},
-//     currentHistory: [],
-//     selectedThreadID: ""
-//   };
 
 export default () => {
   const chatInput = useRef<HTMLInputElement>(null);
@@ -58,15 +44,14 @@ export default () => {
       setListening(true);
     }
   });
+  console.log(messages);
 
   const selectedThread = threads && threads[0][selectedThreadID];
-  console.log({ threads, messages });
   return (
-    <div className={styles.container} data-tid="container">
-      <div className={styles.left_column}>
+    <div className="container" data-tid="container">
+      <div className="db fw-100 avenir pa2 w-50 vh-75 overflow-scroll">
         {threads && (
           <Threads
-            styles={styles}
             selectedThreadID={selectedThreadID}
             onThreadClick={openThread(
               ipcRenderer,
@@ -77,10 +62,9 @@ export default () => {
           />
         )}
       </div>
-      <div className={styles.right_column}>
+      <div>
         {threads && selectedThread && (
           <SelectedThread
-            styles={styles}
             markUnread={markUnread(threads, ipcRenderer, selectedThreadID)}
             snooze={snooze}
             selectedThread={selectedThread}
@@ -88,7 +72,6 @@ export default () => {
         )}
         {messages && (
           <ChatWindow
-            styles={styles}
             reff={scrollView}
             yourID={yourID}
             currentHistory={Object.values(messages[0])}
@@ -96,7 +79,6 @@ export default () => {
         )}
         {messages && (
           <ChatControls
-            styles={styles}
             reff={chatInput}
             sendMessage={sendMessage({
               selectedThreadID,

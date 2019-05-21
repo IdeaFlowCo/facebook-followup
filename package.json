@@ -15,7 +15,8 @@
     "react-dom": "^16.8.6",
     "react-redux": "^7.0.2",
     "redux": "^4.0.1",
-    "source-map-support": "^0.5.10"
+    "source-map-support": "^0.5.10",
+    "tachyons": "^4.11.1"
   },
   "devDependencies": {
     "@babel/preset-react": "^7.0.0",

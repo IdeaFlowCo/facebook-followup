@@ -3,38 +3,34 @@ import React from "react";
 
 type threadDeps = {
   onThreadClick: (id: string) => void;
-  styles: { [x: string]: any };
   selectedThreadID: string;
 };
 
-const thread = ({ onThreadClick, styles, selectedThreadID }: threadDeps) => ({
+const thread = ({ onThreadClick, selectedThreadID }: threadDeps) => ({
   threadID,
   name,
   participants,
   unreadCount
-}: thread) => (
-  <div
-    key={threadID}
-    onClick={() => onThreadClick(threadID)}
-    className={[
-      styles.thread_item,
-      threadID === selectedThreadID ? styles.thread_item_selected : "",
-      unreadCount > 0 ? styles.thread_item_unread : ""
-    ].join(" ")}
-  >
-    {name || participants.map(p => p.name).join(", ")}
-  </div>
-);
+}: thread) => {
+  return (
+    <a href="#" className="link">
+      <div
+        className="pa2"
+        key={threadID}
+        onClick={() => onThreadClick(threadID)}
+      >
+        {name || participants.map(p => p.name).join(", ")}
+      </div>
+    </a>
+  );
+};
 
 export default ({
   list,
   onThreadClick,
-  styles,
   selectedThreadID
 }: {
   list: thread[];
 } & threadDeps) => (
-  <div className={styles.thread_list}>
-    {list.map(thread({ onThreadClick, styles, selectedThreadID }))}
-  </div>
+  <div>{list.map(thread({ onThreadClick, selectedThreadID }))}</div>
 );

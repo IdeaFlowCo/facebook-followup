@@ -4,16 +4,14 @@ import React from "react";
 export default ({
   selectedThread,
   markUnread,
-  snooze,
-  styles
+  snooze
 }: {
   selectedThread: thread;
   markUnread: () => void;
   snooze: (t: thread) => () => void;
-  styles: any;
 }) =>
   selectedThread ? (
-    <div className={styles.right_column_controls}>
+    <div>
       <div onClick={markUnread} style={{ cursor: "pointer" }}>
         Mark as unread
       </div>
