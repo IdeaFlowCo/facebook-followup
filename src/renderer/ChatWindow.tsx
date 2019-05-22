@@ -2,11 +2,17 @@ import React from "react";
 import { message } from "../common/resources";
 
 const message = (yourID: string) => (
-  { body, type, senderID, messageID }: any,
+  { body, type, senderID, messageID, threadID }: message,
   i: number
 ) =>
   type === "message" ? (
-    <div key={messageID === "tmp" ? messageID + i : messageID}>
+    <div
+      className={
+        (senderID === threadID ? "tl pr7" : "tr pl7 bg-black-10") +
+        " pa2 avenir"
+      }
+      key={messageID === "tmp" ? messageID + i : messageID}
+    >
       <span>{body}</span>
     </div>
   ) : (
@@ -22,4 +28,8 @@ export default ({
   currentHistory: message[];
   reff: React.MutableRefObject<null>;
   yourID: string;
-}) => <div ref={reff}>{currentHistory.map(message(yourID))}</div>;
+}) => (
+  <div className="overflow-scroll vh-75" ref={reff}>
+    {currentHistory.map(message(yourID))}
+  </div>
+);

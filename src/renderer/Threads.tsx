@@ -13,12 +13,8 @@ const thread = ({ onThreadClick, selectedThreadID }: threadDeps) => ({
   unreadCount
 }: thread) => {
   return (
-    <a href="#" className="link">
-      <div
-        className="pa2"
-        key={threadID}
-        onClick={() => onThreadClick(threadID)}
-      >
+    <a href="#" onClick={() => onThreadClick(threadID)} className="link">
+      <div className="pa2" key={threadID} style={{ wordWrap: "break-word" }}>
         {name || participants.map(p => p.name).join(", ")}
       </div>
     </a>

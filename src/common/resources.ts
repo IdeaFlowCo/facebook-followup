@@ -1,9 +1,10 @@
 import _ from "lodash";
-import { join } from "./utils";
+
 import { Messen } from "messen";
 import { useState } from "react";
 import { IpcRenderer } from "electron";
 
+export type getterSetter<T> = [T, React.Dispatch<React.SetStateAction<T>>];
 export type participant = {
   name: string;
 };
@@ -27,9 +28,7 @@ export type message = {
 export type friend = {};
 
 export type apiHandler = {
-  [resource: string]: Function | undefined;
-  get?: Function;
-  post?: Function;
+  [resource: string]: (x: any) => any | undefined;
 };
 
 export type command = "get" | "post";
@@ -40,8 +39,8 @@ export enum FBResource {
   threads = "threads"
 }
 
-type mapUseState = {
-  [x: string]: [{}, React.Dispatch<React.SetStateAction<{}>>];
+type mapUseState<T> = {
+  [x: string]: getterSetter<T>;
 };
 
 type action = {
@@ -55,17 +54,17 @@ export const actionate = ({ command, resource, rec }: action) => {
   return rec ? "RCV_" + base : base;
 };
 
-const threadForUser = (mes: any, username: string) => {
-  return mes.store.users
-    .getUser({ name: username })
-    .then(({ id, name }: { id: number; name: string }) => {
-      if (!name) throw new Error();
-      return {
-        threadID: id,
-        name
-      };
-    });
-};
+// const threadForUser = (mes: any, username: string) => {
+//   return mes.store.users
+//     .getUser({ name: username })
+//     .then(({ id, name }: { id: number; name: string }) => {
+//       if (!name) throw new Error();
+//       return {
+//         threadID: id,
+//         name
+//       };
+//     });
+// };
 
 export const resourceToRequest = (mes: Messen) => {
   return {
@@ -82,13 +81,20 @@ export const resourceToRequest = (mes: Messen) => {
       }
     },
     messages: {
-      get: ({ username, count }: { username: string; count: number }) => {
-        const { threadID } = threadForUser(mes, username);
+      get: ({
+        threadID,
+        count,
+        before
+      }: {
+        threadID: string;
+        count: number;
+        before: number;
+      }) => {
         return new Promise((resolve, reject) => {
           mes.api.getThreadHistory(
             threadID,
             count,
-            undefined,
+            before,
             (err: any, history: message[]) => {
               if (err) return reject(err);
               resolve(history);
@@ -97,6 +103,13 @@ export const resourceToRequest = (mes: Messen) => {
             }
           );
         });
+      },
+      post: (body: string, threadID: string) => {
+        return new Promise((resolve, reject) =>
+          mes.api.sendMessage(body, threadID, (err: any, data: any) =>
+            err ? reject(err) : resolve(data)
+          )
+        );
       }
     },
     threads: {
@@ -111,8 +124,6 @@ export const resourceToRequest = (mes: Messen) => {
   };
 };
 
-export const ACTION_RESPONSE_PREFIX = "RCV";
-
 /**
  * @TODO handle posting case
  * @param ipcRenderer
@@ -123,7 +134,7 @@ export const useMessenStore = (ipcRenderer: IpcRenderer) => {
   // but the order is invariant to runtime.
   const states: any = _.keys(FBResource)
     .map(resource => ({ resource, state: useState({}) }))
-    .reduce((agg: mapUseState, { resource, state }) => {
+    .reduce((agg: mapUseState<any>, { resource, state }) => {
       agg[resource.toLowerCase()] = state;
       return agg;
     }, {});
@@ -139,6 +150,7 @@ export const useMessenStore = (ipcRenderer: IpcRenderer) => {
         /** @todo handle the case where we need to update, not replace state */
         const [, setState] = states[resource];
         setState(data);
+        console.log({ resource, data });
       });
     });
     setInitialized(true);

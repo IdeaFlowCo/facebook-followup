@@ -8,7 +8,8 @@ import {
   useMessenStore,
   // friend,
   thread,
-  message
+  message,
+  getterSetter
 } from "../common/resources";
 import Threads from "./Threads";
 import SelectedThread from "./selectedThread";
@@ -17,11 +18,10 @@ import {
   markUnread,
   snooze,
   Dict,
-  getterSetter,
   sendMessage
 } from "./stateLogic";
 import ChatWindow from "./ChatWindow";
-import ChatControls from "./ChatControls";
+import Reply from "./Reply";
 const yourID = "100009069356507";
 
 export default () => {
@@ -44,12 +44,11 @@ export default () => {
       setListening(true);
     }
   });
-  console.log(messages);
 
   const selectedThread = threads && threads[0][selectedThreadID];
   return (
-    <div className="container" data-tid="container">
-      <div className="db fw-100 avenir pa2 w-50 vh-75 overflow-scroll">
+    <div className="cf" data-tid="container">
+      <div className="fl fw-700 avenir pa2 w-20 vh-100 overflow-scroll">
         {threads && (
           <Threads
             selectedThreadID={selectedThreadID}
@@ -62,7 +61,14 @@ export default () => {
           />
         )}
       </div>
-      <div>
+      <div className="vh-100 w-70 fr pa2">
+        {messages && (
+          <ChatWindow
+            reff={scrollView}
+            yourID={yourID}
+            currentHistory={Object.values(messages[0])}
+          />
+        )}
         {threads && selectedThread && (
           <SelectedThread
             markUnread={markUnread(threads, ipcRenderer, selectedThreadID)}
@@ -71,14 +77,7 @@ export default () => {
           />
         )}
         {messages && (
-          <ChatWindow
-            reff={scrollView}
-            yourID={yourID}
-            currentHistory={Object.values(messages[0])}
-          />
-        )}
-        {messages && (
-          <ChatControls
+          <Reply
             reff={chatInput}
             sendMessage={sendMessage({
               selectedThreadID,

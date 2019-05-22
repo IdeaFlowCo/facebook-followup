@@ -26,25 +26,20 @@ const getCreds = () => {
 let mes: Messen;
 mes = new Messen({ dir: "credentials" });
 
-const genericHandling: apiHandler = {
-  get: (actionType: string, handler: ({}) => Promise<any>) => (
-    event: any,
-    payload: {}
-  ) => {
-    // const [command, resource] = actionType.split("_");
-    handler(payload).then(val => {
-      console.log("finally it works");
-
-      event.sender.send("RCV_" + actionType, val);
-    });
-  },
-  post: () => undefined
+const genericHandler = (actionType: string, handler: ({}) => Promise<any>) => (
+  event: any,
+  payload: {}
+) => {
+  // const [command, resource] = actionType.split("_");
+  handler(payload).then(val => {
+    event.sender.send("RCV_" + actionType, val);
+  });
 };
 
 const bindActionsToIPC = (
   resourceToRequest: { [key in keyof typeof FBResource]: apiHandler }
 ) => {
-  Object.keys(genericHandling).forEach(commandName => {
+  ["get", "post"].forEach(commandName => {
     Object.entries(resourceToRequest).forEach(([k, resource]) => {
       const actionType = actionate({
         command: commandName as command,
@@ -57,14 +52,9 @@ const bindActionsToIPC = (
         return;
       }
 
-      const genericHandlerForCommand = genericHandling[commandName];
-      if (commandName === "post" || !genericHandlerForCommand) {
-        console.error(actionType + " not implemented");
-        return;
-      }
-      console.log(actionType, handler);
+      !genericHandler(actionType, handler) && console.log(actionType, handler);
 
-      ipcMain.on(actionType, genericHandlerForCommand(actionType, handler));
+      ipcMain.on(actionType, genericHandler(actionType, handler));
     });
   });
 };

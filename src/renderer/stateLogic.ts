@@ -1,9 +1,14 @@
 import { ipcRenderer, IpcRenderer } from "electron";
-import { thread, message } from "../common/resources";
+import {
+  thread,
+  message,
+  actionate,
+  FBResource,
+  getterSetter
+} from "../common/resources";
 import _ from "lodash";
 import { updateStored } from "../common/utils";
 
-export type getterSetter<T> = [T, React.Dispatch<React.SetStateAction<T>>];
 export type Dict<T> = { [x: string]: T };
 
 // const sendMessageResponse = (e: Electron.Event, data: message) => {
@@ -38,6 +43,10 @@ export type Dict<T> = { [x: string]: T };
 //   }
 // };
 
+export const loadNextMessages = (threadId: string, messages: message[]) => {
+  messages;
+};
+
 export const sendMessage = ({
   selectedThreadID: threadID,
   messages,
@@ -51,10 +60,15 @@ export const sendMessage = ({
 }) => () => {
   if (!chatInput || !chatInput.current) return;
   const body = chatInput.current.value;
-  ipcRenderer.send("sendMessage", {
-    threadID,
-    body: chatInput.current.value
-  });
+
+  ipcRenderer.send(
+    actionate({ command: "post", resource: FBResource.messages, rec: false }),
+    {
+      threadID,
+      body: chatInput.current.value
+    },
+    { body }
+  );
 
   updateStored(messages, {
     tmp: {
@@ -113,20 +127,30 @@ export const snooze = (t: thread) => () => {
 
 export const openThread = (
   ipcRenderer: IpcRenderer,
-  selectedThreadID: getterSetter<string>,
+  [, setThreadID]: getterSetter<string>,
   threads: getterSetter<Dict<thread>>
 ) => (threadID: string) => {
-  ipcRenderer.send("getThreadHistory", {
+  const payload = {
     threadID,
-    amount: 100,
-    timestamp: null
-  });
+    amount: 1000,
+    before: null
+  };
+
+  ipcRenderer.send(
+    actionate({
+      command: "get",
+      resource: FBResource.messages,
+      rec: false
+    }),
+    payload
+  );
 
   ipcRenderer.send("markAsRead", {
     threadID,
     read: true
   });
 
-  selectedThreadID[1](threadID);
+  setThreadID(threadID);
+
   updateStored(threads, { [threadID]: { unreadCount: 0 } });
 };

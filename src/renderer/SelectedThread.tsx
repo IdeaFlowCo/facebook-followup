@@ -11,13 +11,17 @@ export default ({
   snooze: (t: thread) => () => void;
 }) =>
   selectedThread ? (
-    <div>
-      <div onClick={markUnread} style={{ cursor: "pointer" }}>
-        Mark as unread
-      </div>
-      {selectedThread.name}
-      <div onClick={snooze(selectedThread)} style={{ cursor: "pointer" }}>
-        Snooze
-      </div>
+    <div className="dib">
+      <a href="#" className="dib pa2 link avenir" onClick={markUnread}>
+        <div style={{ cursor: "pointer" }}>Mark as unread</div>{" "}
+      </a>
+      <div className="dib pa2 fw-700">{selectedThread.name}</div>
+      <a
+        href="#"
+        className="dib pa2 link avenir"
+        onClick={snooze(selectedThread)}
+      >
+        <div style={{ cursor: "pointer" }}>Snooze</div>
+      </a>
     </div>
   ) : null;
