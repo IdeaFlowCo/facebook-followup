@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from "electron";
-import fbchat from "facebook-chat-api";
+import login from "facebook-chat-api";
 import fs from "fs";
 import { Messen } from "messen";
 // import util from "util";
@@ -8,8 +8,11 @@ import {
   apiHandler,
   actionate,
   command,
-  FBResource
+  FBResource,
+  FBAPI
 } from "../common/resources";
+import { promisify } from "util";
+const FBLogin = promisify(login);
 
 const getCreds = () => {
   try {
@@ -36,9 +39,7 @@ const genericHandler = (actionType: string, handler: ({}) => Promise<any>) => (
   });
 };
 
-const bindActionsToIPC = (
-  resourceToRequest: { [key in keyof typeof FBResource]: apiHandler }
-) => {
+const bindActionsToIPC = (resourceToRequest: { [x: string]: apiHandler }) => {
   ["get", "post"].forEach(commandName => {
     Object.entries(resourceToRequest).forEach(([k, resource]) => {
       const actionType = actionate({
@@ -67,15 +68,16 @@ const bindActionsToIPC = (
 // let dasApi;
 export const initFBChat = (window: BrowserWindow) => {
   const creds = getCreds();
-  mes.login(creds).then(ev => {
-    bindActionsToIPC(resourceToRequest(mes));
+  FBLogin(creds).then((api: FBAPI) => {
+    bindActionsToIPC(resourceToRequest(api));
 
-    mes.listen();
+    /**
+     * @todo figure out where this snippet should go
+     */
+
+    const listen = promisify(api.listen);
+    listen().then((message: any) => console.log(message));
   });
-
-  mes.onMessage = event => {
-    console.log(event);
-  };
 };
 
 // fbchat(creds, (err, api) => {

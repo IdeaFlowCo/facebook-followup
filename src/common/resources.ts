@@ -3,6 +3,7 @@ import _ from "lodash";
 import { Messen } from "messen";
 import { useState } from "react";
 import { IpcRenderer } from "electron";
+import { any } from "prop-types";
 
 export type getterSetter<T> = [T, React.Dispatch<React.SetStateAction<T>>];
 export type participant = {
@@ -49,35 +50,26 @@ type action = {
   rec: boolean;
 };
 
+/**
+ *
+ * @todo fill this in with a type
+ */
+
+export type FBAPI = any;
+
 export const actionate = ({ command, resource, rec }: action) => {
   const base = [command, resource].map(x => x.toUpperCase()).join("_");
   return rec ? "RCV_" + base : base;
 };
 
-// const threadForUser = (mes: any, username: string) => {
-//   return mes.store.users
-//     .getUser({ name: username })
-//     .then(({ id, name }: { id: number; name: string }) => {
-//       if (!name) throw new Error();
-//       return {
-//         threadID: id,
-//         name
-//       };
-//     });
-// };
-
-export const resourceToRequest = (mes: Messen) => {
+export const resourceToRequest = (api: FBAPI) => {
   return {
     friends: {
       /**
        * @param {(err, success)=>any} cb
        */
       get: (payload: {}) => {
-        return new Promise((resolve, reject) =>
-          mes.store.users.me
-            ? resolve(mes.store.users.me.friends)
-            : reject(undefined)
-        );
+        return new Promise((resolve, reject) => reject("not implemented yet"));
       }
     },
     messages: {
@@ -91,22 +83,20 @@ export const resourceToRequest = (mes: Messen) => {
         before: number;
       }) => {
         return new Promise((resolve, reject) => {
-          mes.api.getThreadHistory(
+          api.getThreadHistory(
             threadID,
             count,
             before,
             (err: any, history: message[]) => {
               if (err) return reject(err);
               resolve(history);
-
-              // mes.store.users.getUsers();
             }
           );
         });
       },
       post: (body: string, threadID: string) => {
         return new Promise((resolve, reject) =>
-          mes.api.sendMessage(body, threadID, (err: any, data: any) =>
+          api.sendMessage(body, threadID, (err: any, data: any) =>
             err ? reject(err) : resolve(data)
           )
         );
@@ -115,7 +105,7 @@ export const resourceToRequest = (mes: Messen) => {
     threads: {
       get: () => {
         return new Promise((resolve, reject) => {
-          mes.api.getThreadList(20, null, [], (err: any, data: thread[]) =>
+          api.getThreadList(20, null, [], (err: any, data: thread[]) =>
             err ? reject(err) : resolve(_.keyBy(data, "threadID"))
           );
         });
