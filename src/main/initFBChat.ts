@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from "electron";
-// import fbchat from "facebook-chat-api";
+import fbchat from "facebook-chat-api";
 import fs from "fs";
 import { Messen } from "messen";
 // import util from "util";
@@ -64,8 +64,7 @@ const bindActionsToIPC = (
  * eg, GET_CONTACTS
  */
 
-// api interface  = ...args, cb
-
+// let dasApi;
 export const initFBChat = (window: BrowserWindow) => {
   const creds = getCreds();
   mes.login(creds).then(ev => {
@@ -78,29 +77,22 @@ export const initFBChat = (window: BrowserWindow) => {
     console.log(event);
   };
 };
-// return fbchat(creds, (err, api) => {
+
+// fbchat(creds, (err, api) => {
+//   dasApi = api;
 //   if (err) {
-//     switch (err.error) {
-//       case "login-approval":
-//         console.log("Enter code > ");
-//         window.webContents.send("loginApproval");
-//         break;
-//       default:
-//         console.error(err);
-//     }
-//     return;
+//     console.error("fbchat initialization", err);
 //   }
-//   // dasApi = api;
-//   fs.writeFileSync("appstate.json", JSON.stringify(api.getAppState()));
-//   ipcMain.on("getFriendsList", event => {
-//     api.getFriendsList((err, data) => {
-//       if (err) {
-//         console.error("getFriendsList", err);
-//         return;
-//       }
-//       event.sender.send("getFriendsListResponse", data);
-//     });
+
+// fs.writeFileSync("appstate.json", JSON.stringify(api.getAppState()));
+//   api.getThreadHistory("1490007520", 50, null, (err, data) => {
+//     if (err) {
+//       console.error("getThreadHistory", err);
+//       return;
+//     }
+//     console.log(data);
 //   });
+// });
 //   ipcMain.on("getThreadList", event => {
 //     console.log("getThreadList");
 //     //   api.getThreadList(20, null, [], (err, data) => {

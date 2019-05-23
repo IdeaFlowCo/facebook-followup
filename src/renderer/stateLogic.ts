@@ -47,6 +47,10 @@ export const loadNextMessages = (threadId: string, messages: message[]) => {
   messages;
 };
 
+/**
+ * @todo refactor chat input to be a value. this layer should be interchangeable
+ * with any presentational component
+ */
 export const sendMessage = ({
   selectedThreadID: threadID,
   messages,
