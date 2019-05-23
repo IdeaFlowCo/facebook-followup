@@ -1,17 +1,16 @@
 import { ipcMain, BrowserWindow } from "electron";
 import login from "facebook-chat-api";
 import fs from "fs";
-import { Messen } from "messen";
 // import util from "util";
 import {
   resourceToRequest,
   apiHandler,
   actionate,
   command,
-  FBResource,
-  FBAPI
+  FBResource
 } from "../common/resources";
 import { promisify } from "util";
+import { FBAPI } from "facebook-chat-api";
 const FBLogin = promisify(login);
 
 const getCreds = () => {
@@ -25,9 +24,6 @@ const getCreds = () => {
     return credentials;
   }
 };
-
-let mes: Messen;
-mes = new Messen({ dir: "credentials" });
 
 const genericHandler = (actionType: string, handler: ({}) => Promise<any>) => (
   event: any,

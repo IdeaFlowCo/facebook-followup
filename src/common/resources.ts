@@ -1,9 +1,7 @@
 import _ from "lodash";
-
-import { Messen } from "messen";
 import { useState } from "react";
 import { IpcRenderer } from "electron";
-import { any } from "prop-types";
+import { FBAPI } from "facebook-chat-api";
 
 export type getterSetter<T> = [T, React.Dispatch<React.SetStateAction<T>>];
 export type participant = {
@@ -50,13 +48,6 @@ type action = {
   rec: boolean;
 };
 
-/**
- *
- * @todo fill this in with a type
- */
-
-export type FBAPI = any;
-
 export const actionate = ({ command, resource, rec }: action) => {
   const base = [command, resource].map(x => x.toUpperCase()).join("_");
   return rec ? "RCV_" + base : base;
@@ -83,6 +74,8 @@ export const resourceToRequest = (api: FBAPI) => {
         before: number;
       }) => {
         return new Promise((resolve, reject) => {
+          console.log(before);
+
           api.getThreadHistory(
             threadID,
             count,
@@ -105,7 +98,7 @@ export const resourceToRequest = (api: FBAPI) => {
     threads: {
       get: () => {
         return new Promise((resolve, reject) => {
-          api.getThreadList(20, null, [], (err: any, data: thread[]) =>
+          api.getThreadList(20, null, ["INBOX"], (err: any, data: thread[]) =>
             err ? reject(err) : resolve(_.keyBy(data, "threadID"))
           );
         });

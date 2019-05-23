@@ -9,8 +9,7 @@
     "dist:dir": "yarn dist --dir -c.compression=store -c.mac.identity=null"
   },
   "dependencies": {
-    "facebook-chat-api": "^1.6.1",
-    "messen": "^1.0.0-beta.8",
+    "facebook-chat-api": "Iancam/facebook-chat-api",
     "moment": "^2.24.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
