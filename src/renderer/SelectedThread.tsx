@@ -1,5 +1,5 @@
-import { thread } from "../common/resources";
 import React from "react";
+import { thread } from "facebook-chat-api";
 
 export default ({
   selectedThread,

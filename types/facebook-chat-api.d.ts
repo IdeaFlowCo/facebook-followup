@@ -1,9 +1,39 @@
 export declare function index(loginData: any, callback: any): void;
-export declare function index(
-  loginData: any,
-  options: any,
-  callback: any
-): void;
+
+declare enum FBResource {
+  friends = "friends",
+  messages = "messages",
+  threads = "threads"
+}
+
+export type participant = {
+  name: string;
+};
+export type timestamp = number;
+
+export type thread = {
+  threadID: string;
+  name: string;
+  participants: participant[];
+  unreadCount: number;
+};
+
+export type message = {
+  messageID: string;
+  timestamp: number;
+  body: string | null;
+  type: string;
+  senderID: string;
+  threadID: string;
+};
+
+export type friend = {};
+
+export type apiHandler = {
+  [resource: string]: (x: any) => any | undefined;
+};
+
+export type command = "get" | "post";
 
 type callbackType = (err: any, data: any) => any;
 type threadListTags =
@@ -17,6 +47,8 @@ type threadListTags =
   | ["OTHER", "unread"];
 
 export type FBAPI = {
+  getAppState(): any;
+  listen(): void;
   addUserToGroup(
     userID: string,
     threadID: string,
@@ -133,3 +165,98 @@ export type FBAPI = {
   setTitle(newTitle: string, threadID: string, callback: callbackType): void;
   unsendMessage(messageID: string, callback: callbackType): void;
 };
+
+export type actionatePayload<
+  C extends command,
+  Res extends FBResource,
+  R extends boolean
+> = Res extends FBResource.messages
+  ? C extends "get"
+    ? R extends false
+      ? getThreadHistoryParams
+      : message[]
+    : sendMessageParams
+  : Res extends FBResource.friends
+  ? C extends "get"
+    ? R extends false
+      ? getFriendsListParams
+      : friend[]
+    : never
+  : Res extends FBResource.threads
+  ? C extends "get"
+    ? R extends false
+      ? getThreadListParams
+      : thread[]
+    : never /** @todo: enumerate options  */
+  : never;
+
+export type listenParams = [];
+export type addUserToGroupParams = [userID, threadID];
+export type changeAdminStatusParams = [threadID, adminIDs[], adminStatus];
+export type changeArchivedStatusParams = [threadOrThreads, archive];
+export type changeBlockedStatusParams = [userID, block];
+export type changeGroupImageParams = [image, threadID];
+export type changeNicknameParams = [nickname, threadID, participantID];
+export type changeThreadColorParams = [color, threadID];
+export type changeThreadEmojiParams = [emoji, threadID];
+export type createPollParams = [title, threadID, options];
+export type deleteMessageParams = [messageOrMessages | string[]];
+export type deleteThreadParams = [threadOrThreads | string[]];
+export type forwardAttachmentParams = [attachmentID, userOrUsers | string[]];
+export type getCurrentUserIDParams = [];
+export type getEmojiUrlParams = [c, size, pixelRatio];
+export type getFriendsListParams = [];
+export type getThreadHistoryParams = [threadID, amount, timestamp | null];
+export type getThreadInfoGraphQLParams = [threadID];
+export type getThreadInfoParams = [threadID];
+export type getThreadListParams = [limit, timestamp | null, threadListTags];
+export type getThreadPicturesParams = [threadID, offset, limit];
+export type getUserIDParams = [name];
+export type getUserInfoParams = [id];
+export type handleMessageRequestParams = [threadID, accept];
+export type logoutParams = [];
+export type markAsReadParams = [threadID, read];
+export type muteThreadParams = [threadID, muteSeconds];
+export type removeUserFromGroupParams = [userID, threadID];
+export type resolvePhotoUrlParams = [photoID];
+export type searchForThreadParams = [name];
+export type sendMessageParams = [msg, threadID];
+export type sendTypingIndicatorParams = [threadID];
+export type setMessageReactionParams = [reaction, messageID];
+export type setTitleParams = [newTitle, threadID];
+export type unsendMessageParams = [messageID];
+
+type userID = string;
+type threadID = string;
+type callback = callbackType;
+type adminIDs = string;
+type adminStatus = any;
+type threadOrThreads = any;
+type archive = any;
+type block = Boolean;
+type image = string;
+type nickname = string;
+type participantID = string;
+type color = string;
+type emoji = string;
+type title = string;
+type options = {};
+type messageOrMessages = string;
+type attachmentID = string;
+type userOrUsers = string;
+type c = string;
+type size = number;
+type pixelRatio = string;
+type amount = number;
+type limit = number;
+type offset = number;
+type name = string;
+type id = string;
+type accept = boolean;
+type read = boolean;
+type muteSeconds = number;
+type photoID = string;
+type msg = string;
+type reaction = string;
+type messageID = string;
+type newTitle = string;

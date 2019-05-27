@@ -1,57 +1,62 @@
 import { ipcMain, BrowserWindow } from "electron";
-import login from "facebook-chat-api";
 import fs from "fs";
+import path from "path";
 // import util from "util";
 import {
   resourceToRequest,
-  apiHandler,
-  actionate,
-  command,
-  FBResource
+  // apiHandler,
+  actionate
+  // command,
+  // FBResource
 } from "../common/resources";
 import { promisify } from "util";
-import { FBAPI } from "facebook-chat-api";
-const FBLogin = promisify(login);
+import { FBAPI, apiHandler, command, FBResource } from "facebook-chat-api";
+import login from "facebook-chat-api";
+
+const FBLogin = promisify((login as unknown) as (
+  creds: any,
+  callback: (error: Error | null | undefined, data: any) => any
+) => FBAPI);
+
+const CREDS_DIR = "creds";
+const APPSTATE_FN = "appstate.json";
+const CREDS_FN = "credentials.json";
 
 const getCreds = () => {
   try {
-    const appState = JSON.parse(fs.readFileSync("appstate.json").toString());
+    const appState = JSON.parse(
+      fs.readFileSync(path.join(CREDS_DIR, APPSTATE_FN)).toString()
+    );
     return { appState };
   } catch (err) {
     const credentials = JSON.parse(
-      fs.readFileSync("src/credentials.json").toString()
+      fs.readFileSync(path.join(CREDS_DIR, CREDS_FN)).toString()
     );
     return credentials;
   }
 };
 
-const genericHandler = (actionType: string, handler: ({}) => Promise<any>) => (
-  event: any,
-  payload: {}
-) => {
-  // const [command, resource] = actionType.split("_");
-  handler(payload).then(val => {
-    event.sender.send("RCV_" + actionType, val);
-  });
-};
-
-const bindActionsToIPC = (resourceToRequest: { [x: string]: apiHandler }) => {
+const glueIpcActionRequestToApi = (resourceToRequest: {
+  [x: string]: apiHandler;
+}) => {
   ["get", "post"].forEach(commandName => {
     Object.entries(resourceToRequest).forEach(([k, resource]) => {
-      const actionType = actionate({
+      const actionTypeParams = {
         command: commandName as command,
         rec: false,
         resource: k as FBResource
-      });
+      };
+      const actionType = actionate(actionTypeParams);
       const handler = resource[commandName];
       if (!handler) {
         console.error(actionType + " not implemented");
         return;
       }
-
-      !genericHandler(actionType, handler) && console.log(actionType, handler);
-
-      ipcMain.on(actionType, genericHandler(actionType, handler));
+      const fireReceived = (event: Electron.Event) => (data: any) =>
+        event.sender.send(actionate({ ...actionTypeParams, rec: true }), data);
+      ipcMain.on(actionType, (event: Electron.Event, payload: {}) =>
+        handler(payload).then(fireReceived(event))
+      );
     });
   });
 };
@@ -65,7 +70,11 @@ const bindActionsToIPC = (resourceToRequest: { [x: string]: apiHandler }) => {
 export const initFBChat = (window: BrowserWindow) => {
   const creds = getCreds();
   FBLogin(creds).then((api: FBAPI) => {
-    bindActionsToIPC(resourceToRequest(api));
+    glueIpcActionRequestToApi(resourceToRequest(api));
+    fs.writeFileSync(
+      path.join(CREDS_DIR, APPSTATE_FN),
+      JSON.stringify(api.getAppState())
+    );
 
     /**
      * @todo figure out where this snippet should go
@@ -73,6 +82,10 @@ export const initFBChat = (window: BrowserWindow) => {
 
     const listen = promisify(api.listen);
     listen().then((message: any) => console.log(message));
+
+    api.getThreadHistory("1490007520", 100, null, (err, dat) =>
+      console.log({ calltype: "direct", count: dat.length, last: dat[49] })
+    );
   });
 };
 

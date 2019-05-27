@@ -1,14 +1,9 @@
 import { ipcRenderer, IpcRenderer } from "electron";
-import {
-  thread,
-  message,
-  actionate,
-  FBResource,
-  getterSetter
-} from "../common/resources";
+import { actionate, getterSetter } from "../common/resources";
 import _ from "lodash";
 import { updateStored } from "../common/utils";
-
+import { actionatePayload, message, thread } from "facebook-chat-api";
+import { FBResource } from "../common/resources";
 export type Dict<T> = { [x: string]: T };
 
 // const sendMessageResponse = (e: Electron.Event, data: message) => {
@@ -134,11 +129,11 @@ export const openThread = (
   [, setThreadID]: getterSetter<string>,
   threads: getterSetter<Dict<thread>>
 ) => (threadID: string) => {
-  const payload = {
+  const payload: actionatePayload<"get", FBResource.messages, false> = [
     threadID,
-    amount: 1000,
-    before: null
-  };
+    50,
+    null
+  ];
 
   ipcRenderer.send(
     actionate({
@@ -153,6 +148,7 @@ export const openThread = (
     threadID,
     read: true
   });
+  console.log(threads[0][threadID]);
 
   setThreadID(threadID);
 

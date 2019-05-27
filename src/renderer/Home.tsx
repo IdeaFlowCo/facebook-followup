@@ -1,16 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"; // import { Link } from "react-router-dom";
 import { ipcRenderer } from "electron";
 import _ from "lodash";
-import {
-  // resources,
-  // actionNames,
-  // ACTION_RESPONSE_PREFIX,
-  useMessenStore,
-  // friend,
-  thread,
-  message,
-  getterSetter
-} from "../common/resources";
+import { useMessenStore, getterSetter } from "../common/resources";
 import Threads from "./Threads";
 import SelectedThread from "./selectedThread";
 import {
@@ -22,6 +13,7 @@ import {
 } from "./stateLogic";
 import ChatWindow from "./ChatWindow";
 import Reply from "./Reply";
+import { thread, message } from "facebook-chat-api";
 const yourID = "100009069356507";
 
 export default () => {
@@ -44,14 +36,14 @@ export default () => {
       setListening(true);
     }
   });
+  console.log(threads, messages);
 
-  const selectedThread = threads && threads[0][selectedThreadID];
+  const selectedThread = threads[0][selectedThreadID];
   return (
     <div className="cf" data-tid="container">
       <div className="fl fw-700 avenir pa2 w-20 vh-100 overflow-scroll">
         {threads && (
           <Threads
-            selectedThreadID={selectedThreadID}
             onThreadClick={openThread(
               ipcRenderer,
               [selectedThreadID, updateId],

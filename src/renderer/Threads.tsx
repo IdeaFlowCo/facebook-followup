@@ -1,12 +1,11 @@
-import { thread } from "../common/resources";
 import React from "react";
+import { thread } from "facebook-chat-api";
 
 type threadDeps = {
   onThreadClick: (id: string) => void;
-  selectedThreadID: string;
 };
 
-const thread = ({ onThreadClick, selectedThreadID }: threadDeps) => ({
+const thread = ({ onThreadClick }: threadDeps) => ({
   threadID,
   name,
   participants,
@@ -23,10 +22,7 @@ const thread = ({ onThreadClick, selectedThreadID }: threadDeps) => ({
 
 export default ({
   list,
-  onThreadClick,
-  selectedThreadID
+  onThreadClick
 }: {
   list: thread[];
-} & threadDeps) => (
-  <div>{list.map(thread({ onThreadClick, selectedThreadID }))}</div>
-);
+} & threadDeps) => <div>{list.map(thread({ onThreadClick }))}</div>;

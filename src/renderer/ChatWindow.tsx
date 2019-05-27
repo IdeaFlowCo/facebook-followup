@@ -1,5 +1,5 @@
 import React from "react";
-import { message } from "../common/resources";
+import { message } from "facebook-chat-api";
 
 const message = (yourID: string) => (
   { body, type, senderID, messageID, threadID }: message,
@@ -21,7 +21,6 @@ const message = (yourID: string) => (
 
 export default ({
   currentHistory,
-
   reff,
   yourID
 }: {

@@ -1,43 +1,20 @@
 import _ from "lodash";
 import { useState } from "react";
 import { IpcRenderer } from "electron";
-import { FBAPI } from "facebook-chat-api";
+import {
+  FBAPI,
+  command,
+  message,
+  thread,
+  actionatePayload
+} from "facebook-chat-api";
 
 export type getterSetter<T> = [T, React.Dispatch<React.SetStateAction<T>>];
-export type participant = {
-  name: string;
-};
-
-export type thread = {
-  threadID: string;
-  name: string;
-  participants: participant[];
-  unreadCount: number;
-};
-
-export type message = {
-  messageID: string;
-  timestamp: number;
-  body: string | null;
-  type: string;
-  senderID: string;
-  threadID: string;
-};
-
-export type friend = {};
-
-export type apiHandler = {
-  [resource: string]: (x: any) => any | undefined;
-};
-
-export type command = "get" | "post";
-
 export enum FBResource {
   friends = "friends",
   messages = "messages",
   threads = "threads"
 }
-
 type mapUseState<T> = {
   [x: string]: getterSetter<T>;
 };
@@ -64,24 +41,24 @@ export const resourceToRequest = (api: FBAPI) => {
       }
     },
     messages: {
-      get: ({
-        threadID,
-        count,
-        before
-      }: {
-        threadID: string;
-        count: number;
-        before: number;
-      }) => {
-        return new Promise((resolve, reject) => {
-          console.log(before);
+      get: (payload: actionatePayload<"get", FBResource.messages, false>) => {
+        const [threadID, count, before] = payload;
+        console.log(payload);
 
+        return new Promise((resolve, reject) => {
           api.getThreadHistory(
             threadID,
             count,
             before,
             (err: any, history: message[]) => {
               if (err) return reject(err);
+              console.log({
+                last: history[history.length - 1],
+                count: history.length,
+                before,
+                threadID
+              });
+
               resolve(history);
             }
           );
@@ -121,6 +98,8 @@ export const useMessenStore = (ipcRenderer: IpcRenderer) => {
       agg[resource.toLowerCase()] = state;
       return agg;
     }, {});
+
+  console.log(states, _.keys(FBResource));
 
   if (!initialized) {
     _.values(FBResource).forEach((resource, i) => {
