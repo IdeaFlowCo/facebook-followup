@@ -10,7 +10,7 @@ const CREDS_FN = "credentials.json";
 add 
 ```json
 {
-  "email": "<your email>"
+  "email": "<your email>",
   "password": "<your password>"
 }
 ```
